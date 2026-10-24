@@ -19,17 +19,22 @@ models/
 
 ## manifest.json (optional)
 
+The folder name is the `model_id`, not the manifest. The manifest only adds
+human-readable metadata shown in `GET /v1/models`:
+
 ```json
 {
   "id": "laya-base",
   "name": "Laya Base",
   "description": "Base Laya model without fine-tuning.",
   "created": "2026-10-24",
-  "notes": "Baseline for the A-B-C-D experiments."
+  "notes": "Baseline kept for comparison."
 }
 ```
 
 Without a manifest the model is still registered with `name` = folder name.
+The `id` field inside the manifest is documentation only; requests always use
+the folder name.
 
 ## How to install a model
 

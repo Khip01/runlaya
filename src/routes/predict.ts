@@ -135,7 +135,7 @@ export async function predictRoutes(app: FastifyInstance) {
         description:
           "Run Laya inference on a single text with arbitrary question configuration. " +
           "All parameters (type, instructions, criteria) are sent per request, " +
-          "so different experiments never need code changes.",
+          "keeping the codebase untouched across experiments.",
       },
     },
     async (req, reply) => {

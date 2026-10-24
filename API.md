@@ -22,8 +22,10 @@ Without a valid token:
 ## Models
 
 A model is registered by placing a folder in the `models/` directory
-(or `MODELS_DIR`). The folder name is the `model_id`. See
-[models/README.md](models/README.md) for the folder structure.
+(or `MODELS_DIR`). The folder name IS the `model_id`, which is what the
+`model` field in requests refers to. `manifest.json` is optional extra
+metadata for humans (shown in `GET /v1/models`), it does NOT define the
+model ID. See [models/README.md](models/README.md) for the folder structure.
 
 ---
 
@@ -37,23 +39,23 @@ List all installed models with their status.
 {
   "models": [
     {
-      "id": "laya-base",
-      "name": "Laya Base",
-      "description": "Base Laya model for testing.",
-      "created": "2026-10-24",
-      "notes": "Symlink to the hello-polinema model.",
-      "ready": true,
-      "missingFiles": [],
-      "loaded": false
-    },
-    {
-      "id": "laya-rusak",
-      "name": "laya-rusak",
+      "id": "incomplete-model",
+      "name": "incomplete-model",
       "description": "",
       "created": "",
       "notes": "",
       "ready": false,
       "missingFiles": ["rl_agent_config.json", "encoder.onnx", "head.onnx", "tokenizer.json"],
+      "loaded": false
+    },
+    {
+      "id": "support-classifier",
+      "name": "Support Classifier",
+      "description": "Example model for customer support routing.",
+      "created": "2026-10-24",
+      "notes": "Example manifest, this field is free text.",
+      "ready": true,
+      "missingFiles": [],
       "loaded": false
     }
   ]
@@ -66,6 +68,21 @@ List all installed models with their status.
 ## GET /v1/models/:id
 
 Details for a single model. Same shape as the `models` items above.
+
+**Response 200**
+
+```json
+{
+  "id": "support-classifier",
+  "name": "Support Classifier",
+  "description": "Example model for customer support routing.",
+  "created": "2026-10-24",
+  "notes": "Example manifest, this field is free text.",
+  "ready": true,
+  "missingFiles": [],
+  "loaded": true
+}
+```
 
 **Response 404** (model not registered)
 
@@ -81,7 +98,7 @@ the next use. Use this after replacing the model files on disk.
 **Response 200**
 
 ```json
-{ "id": "laya-base", "unloaded": true }
+{ "id": "support-classifier", "unloaded": true }
 ```
 
 ---
@@ -119,18 +136,17 @@ curl -X POST http://localhost:3000/v1/predict \
   -H "Authorization: Bearer $API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "laya-base",
-    "text": "What is the new student registration fee at Polinema?",
+    "model": "support-classifier",
+    "text": "How do I get a refund for my order?",
     "questions": {
-      "topic": {
+      "intent": {
         "type": "choice",
-        "instructions": "Which topic category does the user message belong to in the context of Politeknik Negeri Malang (Polinema)?",
+        "instructions": "What does the customer want?",
         "criteria": {
-          "profile": "Questions about the profile or general information of Polinema.",
-          "majors": "Questions about departments or study programs at Polinema.",
-          "admission": "Questions about admission or how to enroll at Polinema.",
-          "contact": "Questions about how to contact Polinema.",
-          "off-topic": "Not a question about Polinema."
+          "refund": "The customer wants their money back.",
+          "shipping": "The customer asks about delivery or shipping.",
+          "technical": "The customer has a technical problem.",
+          "other": "Anything else."
         }
       }
     }
@@ -141,27 +157,26 @@ curl -X POST http://localhost:3000/v1/predict \
 
 ```json
 {
-  "model": "laya-base",
+  "model": "support-classifier",
   "answers": {
-    "topic": {
+    "intent": {
       "type": "choice",
-      "choice": "admission",
+      "choice": "refund",
       "probabilities": {
-        "profile": 0.0203,
-        "majors": 0.0043,
-        "admission": 0.9682,
-        "contact": 0.0008,
-        "off-topic": 0.0064
+        "refund": 0.9989,
+        "shipping": 0.001,
+        "technical": 0,
+        "other": 0.0001
       },
-      "confidence": 0.8932,
-      "answer_confidence": 0.9682,
+      "confidence": 0.9932,
+      "answer_confidence": 0.9989,
       "action": { "act_probability": 1 }
     }
   },
   "usage": {
-    "input_tokens": 104,
+    "input_tokens": 60,
     "output_tokens": 0,
-    "state_tokens": 11,
+    "state_tokens": 10,
     "state_tokens_dropped": 0,
     "truncated": false,
     "truncated_questions": []
@@ -176,12 +191,12 @@ curl -X POST http://localhost:3000/v1/predict \
   -H "Authorization: Bearer $API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "laya-base",
-    "text": "I am so angry with this service!",
+    "model": "support-classifier",
+    "text": "This product is terrible, it broke after one day!",
     "questions": {
       "angry": {
         "type": "noul",
-        "instructions": "Is the user angry?",
+        "instructions": "Is the customer angry?",
         "criteria": { "true": "yes, angry", "false": "no" }
       },
       "sentiment": {
@@ -197,26 +212,26 @@ curl -X POST http://localhost:3000/v1/predict \
 
 ```json
 {
-  "model": "laya-base",
+  "model": "support-classifier",
   "answers": {
     "angry": {
       "type": "noul",
-      "noul": 0.9653,
-      "confidence": 0.9653,
-      "answer_confidence": 0.9653,
+      "noul": 0.5547,
+      "confidence": 0.5547,
+      "answer_confidence": 0.5547,
       "action": { "act_probability": 1 }
     },
     "sentiment": {
       "type": "score",
-      "score": 0.0021,
+      "score": 0.0005,
       "legend": { "0": "very negative", "1": "neutral", "2": "very positive" },
-      "probabilities": { "0": 0.9981, "1": 0.0017, "2": 0.0002 },
-      "confidence": 0.9869,
-      "answer_confidence": 0.9981,
+      "probabilities": { "0": 0.9997, "1": 0.0002, "2": 0.0002 },
+      "confidence": 0.997,
+      "answer_confidence": 0.9997,
       "action": { "act_probability": 1 }
     }
   },
-  "usage": { "input_tokens": 75, "output_tokens": 0, "state_tokens": 8 }
+  "usage": { "input_tokens": 81, "output_tokens": 0, "state_tokens": 11 }
 }
 ```
 
@@ -243,7 +258,11 @@ The engine applies NO threshold whatsoever.
 Example responses:
 
 ```json
-{ "error": "model_not_ready", "message": "Model \"laya-rusak\" is not ready. Missing files: rl_agent_config.json, encoder.onnx, head.onnx, tokenizer.json." }
+{ "error": "model_not_found", "message": "Model \"missing-model\" was not found in the model directory." }
+```
+
+```json
+{ "error": "model_not_ready", "message": "Model \"incomplete-model\" is not ready. Missing files: rl_agent_config.json, encoder.onnx, head.onnx, tokenizer.json." }
 ```
 
 ```json
@@ -268,35 +287,35 @@ Inference on many texts with the same question configuration.
 
 ```json
 {
-  "model": "laya-base",
+  "model": "support-classifier",
   "results": [
     {
-      "model": "laya-base",
+      "model": "support-classifier",
       "answers": {
-        "topic": {
+        "intent": {
           "type": "choice",
-          "choice": "location",
-          "probabilities": { "location": 0.9917, "off-topic": 0.0083 },
-          "confidence": 0.9308,
-          "answer_confidence": 0.9917,
+          "choice": "shipping",
+          "probabilities": { "shipping": 0.9571, "other": 0.0429 },
+          "confidence": 0.7443,
+          "answer_confidence": 0.9571,
           "action": { "act_probability": 1 }
         }
       },
-      "usage": { "input_tokens": 44, "output_tokens": 0 }
+      "usage": { "input_tokens": 41, "output_tokens": 0 }
     },
     {
-      "model": "laya-base",
+      "model": "support-classifier",
       "answers": {
-        "topic": {
+        "intent": {
           "type": "choice",
-          "choice": "off-topic",
-          "probabilities": { "location": 0.012, "off-topic": 0.988 },
-          "confidence": 0.9061,
-          "answer_confidence": 0.988,
+          "choice": "other",
+          "probabilities": { "shipping": 0.1736, "other": 0.8264 },
+          "confidence": 0.3342,
+          "answer_confidence": 0.8264,
           "action": { "act_probability": 1 }
         }
       },
-      "usage": { "input_tokens": 43, "output_tokens": 0 }
+      "usage": { "input_tokens": 36, "output_tokens": 0 }
     }
   ]
 }

@@ -2,7 +2,7 @@
 
 Plug-and-play inference API for Laya ONNX models.
 This project is a shell: Laya models (fine-tuned or not) can be mounted and
-swapped without code changes. Inference parameters are sent per-request.
+swapped without modifying the source. Inference parameters are sent per-request.
 
 ## Language policy (strict)
 
@@ -21,10 +21,14 @@ error messages, and commit messages. Never use Indonesian in this repo.
 
 | Command | Function |
 |---|---|
+| `./run` / `run.cmd` | One-command launcher: env bootstrap, deps, submodule, build, free port, clean Ctrl+C |
 | `npm install --ignore-scripts` | Install dependencies (MUST use `--ignore-scripts`) |
 | `npm run setup:laya` | Build `laya-ts` from the submodule (once after clone) |
-| `npm start` | Run the server |
+| `npm start` | Run the server directly (assumes setup is done) |
 | `npm run typecheck` | Type check, run before committing |
+
+Launcher files: `run.mjs` holds all logic (cross-platform, dependency-free),
+`run` (bash) and `run.cmd` (cmd) are thin wrappers. Keep them in sync.
 
 Submodule:
 
@@ -47,6 +51,9 @@ runlaya/
     routes/
       models.ts      <- GET /v1/models, GET /v1/models/:id, POST /v1/models/:id/unload
       predict.ts     <- POST /v1/predict, POST /v1/predict/batch
+  run.mjs            <- cross-platform launcher logic
+  run                <- bash wrapper (Linux/macOS)
+  run.cmd            <- cmd wrapper (Windows)
   vendor/laya/       <- submodule (do not edit directly)
   API.md             <- API reference with real captured responses
   README.md          <- usage guide
@@ -62,7 +69,7 @@ runlaya/
 3. Multi-model: `models/<model-id>/`, selected via the `model` field in the
    request. Lazy load + cache in memory (`src/lib/engine.ts`).
 4. `manifest.json` is optional; a folder without one is still registered.
-5. Bearer token auth (`API_TOKEN`), same pattern as `hello-polinema`.
+5. Bearer token auth (`API_TOKEN`).
 6. API style: custom REST `/v1/*`. Not OpenAI-compatible.
 
 ## Laya models
@@ -87,15 +94,9 @@ Laya question types:
 - New `.sh` files or scripts must be registered with `git update-index --chmod=+x`.
 - Never edit `vendor/laya/` directly; it is an upstream submodule.
 
-## Research context
+## Use cases
 
-This project supports the A-B-C-D thesis experiments: whether fine-tuning
-Laya reduces its dependency on `criteria`. Experiments only need to change
-the model (`model`) and `criteria` in the request, never the code.
-Datasets and research notes live in the `Khip01/private_thesis_needs` repo.
-
-## Related projects
-
-| Location | Content |
-|---|---|
-| `../hello-polinema/` | Chatbot API that will be refactored to use this engine |
+This engine is built for model comparison experiments: swap the model
+(`model`) and the `criteria` in the request to evaluate different setups
+(base vs fine-tuned models, full vs minimal criteria) without touching code.
+It is also suitable as a general-purpose Laya inference backend for apps.

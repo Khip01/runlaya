@@ -3,14 +3,14 @@
 Plug-and-play inference API for Laya ONNX models.
 Register your models (fine-tuned or not) in the `models/` directory, then run
 `choice` / `score` / `noul` predictions with per-request parameters.
-No code changes needed.
+Models and question parameters are configured entirely at request time.
 
 ## Features
 
 - Plug and play: copy an ONNX model folder in, it is registered instantly without restart.
 - Multi-model: run many models side by side, pick one via the `model` field per request.
 - Per-request parameters: question type, instructions, and `criteria` are sent
-  in the request body, perfect for experiments (full vs minimal criteria).
+  in the request body, keeping the codebase untouched across use cases.
 - Raw output without thresholds: `choice` (label + probabilities + confidence),
   `noul` (number 0..1), `score` (number). Threshold decisions belong to the caller.
 - Batch: predict many texts at once for dataset evaluation.
@@ -48,6 +48,25 @@ cp .env.example .env
 
 ## Running
 
+The easiest way, works on Linux, macOS, and Windows:
+
+```bash
+./run        # Linux / macOS
+run.cmd      # Windows (cmd)
+```
+
+The launcher checks and sets up everything automatically:
+
+- Checks Node.js >= 20.
+- Creates `.env` from `.env.example` with a generated `API_TOKEN` when missing.
+- Installs dependencies when `node_modules/` is missing.
+- Initializes the `laya-ts` submodule and builds it when needed.
+- Finds a free port (3000 -> 3001 -> ... when occupied).
+- Warns when the `models/` directory is still empty.
+- Stops cleanly on Ctrl+C.
+
+Or run it manually:
+
 ```bash
 npm start
 ```
@@ -60,13 +79,13 @@ One folder = one model. The folder name becomes the `model_id`.
 
 ```
 models/
-  laya-base/
+  my-model/
     manifest.json        (optional)
     rl_agent_config.json
     tokenizer.json
     encoder.onnx (+ .onnx.data when weights are separate)
     head.onnx (+ .onnx.data when weights are separate)
-  laya-finetuned-a/
+  my-other-model/
     ...
 ```
 
@@ -87,15 +106,17 @@ curl -X POST http://localhost:3000/v1/predict \
   -H "Authorization: Bearer $API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "laya-base",
-    "text": "What is the registration fee at Polinema?",
+    "model": "support-classifier",
+    "text": "How do I get a refund for my order?",
     "questions": {
-      "topik": {
+      "intent": {
         "type": "choice",
-        "instructions": "Which category does the user message belong to?",
+        "instructions": "What does the customer want?",
         "criteria": {
-          "pendaftaran": "Questions about university admission.",
-          "luar-topik": "Not about Polinema."
+          "refund": "The customer wants their money back.",
+          "shipping": "The customer asks about delivery or shipping.",
+          "technical": "The customer has a technical problem.",
+          "other": "Anything else."
         }
       }
     }
@@ -106,18 +127,23 @@ Response:
 
 ```json
 {
-  "model": "laya-base",
+  "model": "support-classifier",
   "answers": {
-    "topik": {
+    "intent": {
       "type": "choice",
-      "choice": "pendaftaran",
-      "probabilities": { "pendaftaran": 0.9984, "luar-topik": 0.0016 },
-      "confidence": 0.9911,
-      "answer_confidence": 0.9984,
+      "choice": "refund",
+      "probabilities": {
+        "refund": 0.9989,
+        "shipping": 0.001,
+        "technical": 0,
+        "other": 0.0001
+      },
+      "confidence": 0.9932,
+      "answer_confidence": 0.9989,
       "action": { "act_probability": 1 }
     }
   },
-  "usage": { "input_tokens": 105, "output_tokens": 0 }
+  "usage": { "input_tokens": 60, "output_tokens": 0 }
 }
 ```
 
