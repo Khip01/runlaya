@@ -16,23 +16,51 @@ Models and question parameters are configured entirely at request time.
 - Batch: predict many texts at once for dataset evaluation.
 - Interactive API documentation at `/docs` (Scalar).
 
-## Installation
+## Quick start
 
 Requirements: Node.js >= 20, git.
 
 ```bash
 git clone --recurse-submodules https://github.com/Khip01/runlaya.git
 cd runlaya
+./run        # Linux / macOS
+run.cmd      # Windows (cmd)
+```
+
+That is all. On the first run the launcher performs the full setup
+automatically, and starts the server when it is done:
+
+- Checks Node.js >= 20.
+- Creates `.env` from `.env.example` with a generated `API_TOKEN` when missing.
+- Installs dependencies (`npm install --ignore-scripts`) when `node_modules/` is missing.
+- Initializes the `laya-ts` submodule and builds it when needed.
+- Finds a free port (3000 -> 3001 -> ... when occupied).
+- Warns when the `models/` directory is still empty.
+- Stops cleanly on Ctrl+C.
+
+Every step is skipped automatically when it is already done, so later runs
+go straight to starting the server.
+
+The server runs at `http://localhost:3000`, documentation at `http://localhost:3000/docs`.
+
+## Manual installation (alternative)
+
+Only needed when you prefer not to use the launcher, or want to prepare
+the setup separately:
+
+```bash
 npm install --ignore-scripts
 npm run setup:laya    # build laya-ts from the vendor/ submodule
 ```
 
-If you forgot `--recurse-submodules`:
+If you cloned without `--recurse-submodules`:
 
 ```bash
 git submodule update --init
 npm run setup:laya
 ```
+
+Then start the server directly with `npm start`.
 
 ## Configuration
 
@@ -40,38 +68,13 @@ npm run setup:laya
 cp .env.example .env
 ```
 
+This step is optional: the launcher creates `.env` for you when it is missing.
+
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `API_TOKEN` | yes | - | Bearer token for API authentication |
 | `PORT` | no | 3000 | Server port |
 | `MODELS_DIR` | no | `./models/` | Directory containing model subfolders |
-
-## Running
-
-The easiest way, works on Linux, macOS, and Windows:
-
-```bash
-./run        # Linux / macOS
-run.cmd      # Windows (cmd)
-```
-
-The launcher checks and sets up everything automatically:
-
-- Checks Node.js >= 20.
-- Creates `.env` from `.env.example` with a generated `API_TOKEN` when missing.
-- Installs dependencies when `node_modules/` is missing.
-- Initializes the `laya-ts` submodule and builds it when needed.
-- Finds a free port (3000 -> 3001 -> ... when occupied).
-- Warns when the `models/` directory is still empty.
-- Stops cleanly on Ctrl+C.
-
-Or run it manually:
-
-```bash
-npm start
-```
-
-The server runs at `http://localhost:3000`, documentation at `http://localhost:3000/docs`.
 
 ## Installing models
 
