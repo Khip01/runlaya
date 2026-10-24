@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+vendor/laya/dist/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Model weights and artifacts, keep off git.
+# Each model lives in models/<model-id>/ and stays local.
+models/*
+!models/.gitkeep
+!models/README.md
+*.onnx
+*.onnx.data
+*.safetensors
+
+# Python (untuk ekspor ONNX)
+__pycache__/
+*.py[cod]
+.venv/
+venv/

@@ -1,0 +1,36 @@
+{
+  "name": "runlaya",
+  "version": "0.1.0",
+  "description": "Inference API plug-and-play untuk model Laya ONNX: daftarkan banyak model, jalankan prediksi choice/score/noul dengan criteria per-request.",
+  "type": "module",
+  "private": true,
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "setup:laya": "npm --prefix vendor/laya/laya-ts install --ignore-scripts && npm --prefix vendor/laya/laya-ts run build && git -C vendor/laya checkout laya-ts/package-lock.json",
+    "start": "node src/server.ts"
+  },
+  "dependencies": {
+    "@fastify/swagger": "^9.9.2",
+    "@scalar/fastify-api-reference": "^1.75.1",
+    "@sinclair/typebox": "^0.34.52",
+    "dotenv": "^18.0.9",
+    "fastify": "^5.12.7",
+    "laya-ts": "file:vendor/laya/laya-ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Khip01/runlaya.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Khip01/runlaya/issues"
+  },
+  "homepage": "https://github.com/Khip01/runlaya#readme",
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2"
+  }
+}
