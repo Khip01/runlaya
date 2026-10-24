@@ -1,96 +1,101 @@
 # AGENTS.md - runlaya
 
-Inference API plug-and-play untuk model Laya ONNX.
-Project ini adalah "cangkang": model Laya (fine-tuned atau belum) bisa
-dipasang-cabut tanpa ubah kode. Parameter inferensi dikirim per-request.
+Plug-and-play inference API for Laya ONNX models.
+This project is a shell: Laya models (fine-tuned or not) can be mounted and
+swapped without code changes. Inference parameters are sent per-request.
 
-## Stack (terkunci)
+## Language policy (strict)
+
+Everything in this repository is English only: docs, comments, strings,
+error messages, and commit messages. Never use Indonesian in this repo.
+
+## Locked stack
 
 - TypeScript strict ESM (tsconfig: ES2022, NodeNext, `strict`,
   `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noEmit`).
 - Fastify + TypeBox (JSON schema) + Scalar (`@scalar/fastify-api-reference`).
-- `laya-ts` via submodule `vendor/laya` (sparse checkout `laya-ts/`).
-- Node.js >= 20 (dikembangkan dengan Node 24).
+- `laya-ts` via the `vendor/laya` submodule (sparse checkout `laya-ts/`).
+- Node.js >= 20 (developed on Node 24).
 
-## Perintah penting
+## Important commands
 
-| Perintah | Fungsi |
+| Command | Function |
 |---|---|
-| `npm install --ignore-scripts` | Install dependensi (WAJIB pakai `--ignore-scripts`) |
-| `npm run setup:laya` | Build `laya-ts` dari submodule (sekali setelah clone) |
-| `npm start` | Jalankan server |
-| `npm run typecheck` | Cek tipe, jalan sebelum commit |
+| `npm install --ignore-scripts` | Install dependencies (MUST use `--ignore-scripts`) |
+| `npm run setup:laya` | Build `laya-ts` from the submodule (once after clone) |
+| `npm start` | Run the server |
+| `npm run typecheck` | Type check, run before committing |
 
 Submodule:
 
 ```bash
-git submodule update --init   # jika lupa --recurse-submodules saat clone
+git submodule update --init   # when cloned without --recurse-submodules
 ```
 
-## Struktur
+## Layout
 
 ```
 runlaya/
-  models/            <- direktori model (per subfolder), ISI TIDAK DI-COMMIT
+  models/            <- model directory (per subfolder), CONTENTS NOT COMMITTED
   src/
-    server.ts        <- bootstrap Fastify + swagger + Scalar
-    types.ts         <- tipe bersama
+    server.ts        <- Fastify bootstrap + swagger + Scalar
+    types.ts         <- shared types
     lib/
-      registry.ts    <- scan models/, baca manifest, cek file wajib
-      engine.ts      <- cache Agent, predict/predictBatch
-      auth.ts        <- cek Bearer token
+      registry.ts    <- scan models/, read manifest, check required files
+      engine.ts      <- agent cache, predict/predictBatch
+      auth.ts        <- Bearer token check
     routes/
       models.ts      <- GET /v1/models, GET /v1/models/:id, POST /v1/models/:id/unload
       predict.ts     <- POST /v1/predict, POST /v1/predict/batch
-  vendor/laya/       <- submodule (jangan diedit langsung)
-  API.md             <- referensi API dengan contoh respons nyata
-  README.md          <- panduan pemakaian
+  vendor/laya/       <- submodule (do not edit directly)
+  API.md             <- API reference with real captured responses
+  README.md          <- usage guide
+  LICENSE            <- Apache License 2.0
 ```
 
-## Konsep desain (WAJIB dipertahankan)
+## Design principles (MUST be preserved)
 
-1. Engine netral: TANPA threshold, TANPA knowledge base, TANPA LLM.
-   Output mentah Laya yang dikembalikan; keputusan threshold urusan pemanggil.
-2. Semua parameter `questions` (type, instructions, criteria) dikirim
-   per-request. Jangan hardcode criteria di kode.
-3. Multi-model: `models/<model-id>/`, dipilih via field `model` di request.
-   Lazy load + cache di memori (`src/lib/engine.ts`).
-4. `manifest.json` bersifat opsional; folder tanpa manifest tetap terdaftar.
-5. Auth Bearer token (`API_TOKEN`), sama polanya dengan `hello-polinema`.
-6. Gaya API: REST custom `/v1/*`. Bukan OpenAI-compatible.
+1. Neutral engine: NO threshold, NO knowledge base, NO LLM.
+   Raw Laya output is returned; threshold decisions belong to the caller.
+2. All `questions` parameters (type, instructions, criteria) are sent
+   per-request. Never hardcode criteria in the code.
+3. Multi-model: `models/<model-id>/`, selected via the `model` field in the
+   request. Lazy load + cache in memory (`src/lib/engine.ts`).
+4. `manifest.json` is optional; a folder without one is still registered.
+5. Bearer token auth (`API_TOKEN`), same pattern as `hello-polinema`.
+6. API style: custom REST `/v1/*`. Not OpenAI-compatible.
 
-## Model Laya
+## Laya models
 
-File wajib di folder model (didefinisikan `laya-ts`):
+Required files in a model folder (defined by `laya-ts`):
 - `rl_agent_config.json`
-- `tokenizer.json` (atau `tokenizer/tokenizer.json`)
-- `encoder.onnx` (+ `encoder.onnx.data` jika bobot terpisah)
-- `head.onnx` (+ `head.onnx.data` jika bobot terpisah)
+- `tokenizer.json` (or `tokenizer/tokenizer.json`)
+- `encoder.onnx` (+ `encoder.onnx.data` when weights are separate)
+- `head.onnx` (+ `head.onnx.data` when weights are separate)
 
-Tipe pertanyaan Laya:
-- `choice` -> pilih satu label dari `criteria` (klasifikasi)
-- `noul` -> probabilitas 0..1 pernyataan benar
-- `score` -> nilai 0..n dengan `legend`
+Laya question types:
+- `choice` -> pick one label from `criteria` (classification)
+- `noul` -> probability 0..1 that the statement holds
+- `score` -> value 0..n with `legend`
 
-## Konvensi
+## Conventions
 
-- Bahasa Indonesia untuk deskripsi API, komentar, dan pesan error.
-- TANPA em dash (U+2014) dan emoji di output, kode, dan commit.
-- Commit: Conventional Commits, wajib GPG-signed, minta ACC user sebelum commit.
-- Secret di `.env` (git-ignored). `.env.example` kosong tanpa rahasia.
-- File `.sh` atau script baru wajib `git update-index --chmod=+x`.
-- Jangan ubah `vendor/laya/` langsung; itu submodule upstream.
+- English everywhere (see language policy above).
+- NO em dash (U+2014) and NO emoji in output, code, or commits.
+- Commits: Conventional Commits, GPG-signed, ask user approval before committing.
+- Secrets in `.env` (git-ignored). `.env.example` stays empty with no secrets.
+- New `.sh` files or scripts must be registered with `git update-index --chmod=+x`.
+- Never edit `vendor/laya/` directly; it is an upstream submodule.
 
-## Konteks skripsi
+## Research context
 
-Project ini dipakai untuk eksperimen A-B-C-D penelitian skripsi:
-fine-tuning Laya mengurangi ketergantungan pada `criteria`.
-Eksperimen cukup ganti model (`model`) dan `criteria` di request,
-tanpa ubah kode. Dataset dan catatan penelitian ada di repo
-`Khip01/private_thesis_needs`.
+This project supports the A-B-C-D thesis experiments: whether fine-tuning
+Laya reduces its dependency on `criteria`. Experiments only need to change
+the model (`model`) and `criteria` in the request, never the code.
+Datasets and research notes live in the `Khip01/private_thesis_needs` repo.
 
-## Proyek terkait
+## Related projects
 
-| Lokasi | Isi |
+| Location | Content |
 |---|---|
-| `../hello-polinema/` | Chatbot API yang akan dikonversi memakai engine ini |
+| `../hello-polinema/` | Chatbot API that will be refactored to use this engine |

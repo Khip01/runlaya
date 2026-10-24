@@ -5,7 +5,7 @@ function getAuthToken(): string {
 }
 
 /**
- * Cek Bearer token. Return true jika valid.
+ * Check the Bearer token. Returns true when valid.
  */
 export function checkAuth(req: FastifyRequest): boolean {
   const authHeader = req.headers.authorization;
@@ -16,11 +16,11 @@ export function checkAuth(req: FastifyRequest): boolean {
 export function unauthorized(reply: FastifyReply) {
   return reply.status(401).send({
     error: "unauthorized",
-    message: "Token tidak valid atau tidak ada.",
+    message: "Invalid or missing token.",
   });
 }
 
-/** Hook auth untuk route yang butuh proteksi. */
+/** Auth hook for routes that need protection. */
 export function authHook(app: FastifyInstance) {
   app.addHook("onRequest", async (req, reply) => {
     if (!checkAuth(req)) {

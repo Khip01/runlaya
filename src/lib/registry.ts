@@ -3,10 +3,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ModelInfo, ModelManifest } from "../types.ts";
 
-/** File wajib yang harus ada di folder model agar bisa dipakai. */
+/** Required files that must exist in a model folder to be usable. */
 const REQUIRED_FILES = ["rl_agent_config.json", "encoder.onnx", "head.onnx"];
 
-/** Lokasi tokenizer yang diterima laya-ts (salah satu cukup). */
+/** Tokenizer locations accepted by laya-ts (either one is enough). */
 const TOKENIZER_CANDIDATES = ["tokenizer.json", "tokenizer/tokenizer.json"];
 
 export function getModelsDir(): string {
@@ -32,9 +32,9 @@ async function isDir(p: string): Promise<boolean> {
 }
 
 /**
- * Baca manifest.json dari folder model.
- * Manifest bersifat opsional: folder tanpa manifest tetap terdaftar
- * dengan fallback dari nama folder, supaya model tinggal di-copy saja.
+ * Read manifest.json from a model folder.
+ * The manifest is optional: a folder without one is still registered,
+ * falling back to the folder name, so a model can just be copied in.
  */
 async function readManifest(modelDir: string, id: string): Promise<ModelManifest> {
   const base: ModelManifest = {
@@ -88,7 +88,7 @@ async function toInfo(modelDir: string, id: string, loadedIds: ReadonlySet<strin
   };
 }
 
-/** Scan direktori model: setiap subfolder = satu model terdaftar. */
+/** Scan the models directory: each subfolder is one registered model. */
 export async function scanModels(loadedIds: ReadonlySet<string>): Promise<ModelInfo[]> {
   const root = getModelsDir();
   if (!(await isDir(root))) return [];
@@ -103,14 +103,14 @@ export async function scanModels(loadedIds: ReadonlySet<string>): Promise<ModelI
   return infos;
 }
 
-/** Ambil info satu model; null jika tidak terdaftar. */
+/** Get info for a single model; null when not registered. */
 export async function getModel(id: string, loadedIds: ReadonlySet<string>): Promise<ModelInfo | null> {
   const modelDir = path.join(getModelsDir(), id);
   if (!(await isDir(modelDir))) return null;
   return toInfo(modelDir, id, loadedIds);
 }
 
-/** Path absolut folder model. */
+/** Absolute path of a model folder. */
 export function modelDirOf(id: string): string {
   return path.join(getModelsDir(), id);
 }

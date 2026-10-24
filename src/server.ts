@@ -20,9 +20,9 @@ async function main() {
       info: {
         title: "Runlaya API",
         description:
-          "Inference API plug-and-play untuk model Laya ONNX. " +
-          "Daftarkan model di direktori model, pilih via field `model`, " +
-          "kirim parameter (tipe, instruksi, criteria) per-request.",
+          "Plug-and-play inference API for Laya ONNX models. " +
+          "Register models in the models directory, pick one via the `model` field, " +
+          "and send parameters (type, instructions, criteria) per request.",
         version: "0.1.0",
         license: { name: "Apache-2.0" },
       },
@@ -31,7 +31,7 @@ async function main() {
           bearerAuth: {
             type: "http",
             scheme: "bearer",
-            description: "Masukkan token API.",
+            description: "Enter the API token.",
           },
         },
       },
@@ -53,8 +53,8 @@ async function main() {
 
   try {
     await app.listen({ port: PORT, host: "0.0.0.0" });
-    console.log(`Server berjalan di http://localhost:${PORT}`);
-    console.log(`Dokumentasi API di http://localhost:${PORT}/docs`);
+    console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`API documentation at http://localhost:${PORT}/docs`);
   } catch (err) {
     app.log.error(err);
     process.exit(1);

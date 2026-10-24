@@ -1,35 +1,35 @@
 # API Reference
 
-Base URL: `http://localhost:3000` (atau sesuai `PORT`).
+Base URL: `http://localhost:3000` (or whatever `PORT` is set to).
 
-Dokumentasi interaktif: `http://localhost:3000/docs` (Scalar).
-Spesifikasi OpenAPI mentah: `http://localhost:3000/openapi.json`.
+Interactive documentation: `http://localhost:3000/docs` (Scalar).
+Raw OpenAPI spec: `http://localhost:3000/openapi.json`.
 
-## Autentikasi
+## Authentication
 
-Semua endpoint `/v1/*` membutuhkan Bearer token:
+All `/v1/*` endpoints require a Bearer token:
 
 ```
 Authorization: Bearer <API_TOKEN>
 ```
 
-Tanpa token yang valid:
+Without a valid token:
 
 ```json
-{ "error": "unauthorized", "message": "Token tidak valid atau tidak ada." }
+{ "error": "unauthorized", "message": "Invalid or missing token." }
 ```
 
-## Model
+## Models
 
-Model didaftarkan dengan menaruh folder di direktori `models/`
-(atau `MODELS_DIR`). Nama folder = `model_id`. Detail struktur di
-[models/README.md](models/README.md).
+A model is registered by placing a folder in the `models/` directory
+(or `MODELS_DIR`). The folder name is the `model_id`. See
+[models/README.md](models/README.md) for the folder structure.
 
 ---
 
 ## GET /v1/models
 
-Daftar semua model terpasang beserta statusnya.
+List all installed models with their status.
 
 **Response 200**
 
@@ -39,9 +39,9 @@ Daftar semua model terpasang beserta statusnya.
     {
       "id": "laya-base",
       "name": "Laya Base",
-      "description": "Model dasar Laya untuk pengujian.",
+      "description": "Base Laya model for testing.",
       "created": "2026-10-24",
-      "notes": "Baseline untuk eksperimen.",
+      "notes": "Symlink to the hello-polinema model.",
       "ready": true,
       "missingFiles": [],
       "loaded": false
@@ -60,23 +60,23 @@ Daftar semua model terpasang beserta statusnya.
 }
 ```
 
-- `ready`: `true` jika semua file wajib model ada.
-- `loaded`: `true` jika model sudah dimuat ke memori.
+- `ready`: `true` when all required model files exist.
+- `loaded`: `true` when the model is loaded into memory.
 
 ## GET /v1/models/:id
 
-Detail satu model. Format sama dengan elemen `models` di atas.
+Details for a single model. Same shape as the `models` items above.
 
-**Response 404** (model tidak terdaftar)
+**Response 404** (model not registered)
 
 ```json
-{ "error": "model_not_found", "message": "Model \"tidak-ada\" tidak ditemukan di direktori model." }
+{ "error": "model_not_found", "message": "Model \"missing-model\" was not found in the model directory." }
 ```
 
 ## POST /v1/models/:id/unload
 
-Keluarkan model dari cache memori. Model dimuat ulang otomatis saat dipakai
-berikutnya. Gunakan setelah file model diganti di disk.
+Remove the model from the memory cache. It is loaded again automatically on
+the next use. Use this after replacing the model files on disk.
 
 **Response 200**
 
@@ -88,31 +88,31 @@ berikutnya. Gunakan setelah file model diganti di disk.
 
 ## POST /v1/predict
 
-Inferensi satu teks.
+Inference on a single text.
 
 **Request body**
 
-| Field | Tipe | Wajib | Keterangan |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `model` | string | ya | `model_id` (nama folder) |
-| `text` | string | ya | Teks masukan, 1-4000 karakter |
-| `questions` | object | ya | 1-32 pertanyaan, key = nama field jawaban |
+| `model` | string | yes | `model_id` (folder name) |
+| `text` | string | yes | Input text, 1-4000 characters |
+| `questions` | object | yes | 1-32 questions, key = answer field name |
 
-Bentuk satu pertanyaan:
+One question looks like:
 
-| Field | Tipe | Wajib | Keterangan |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `type` | `"choice"` \| `"score"` \| `"noul"` | ya | Tipe pertanyaan |
-| `instructions` | string | tidak | Instruksi/pertanyaan untuk model |
-| `criteria` | object \| array | tidak | Bergantung tipe (lihat bawah) |
+| `type` | `"choice"` \| `"score"` \| `"noul"` | yes | Question type |
+| `instructions` | string | no | Instruction/question for the model |
+| `criteria` | object \| array | no | Depends on the type (see below) |
 
-`criteria` per tipe:
+`criteria` per type:
 
-- `choice`: map `label -> deskripsi` atau array label.
-- `score`: array level (misal `["rendah", "sedang", "tinggi"]`).
-- `noul`: map `true -> deskripsi`, `false -> deskripsi` (opsional).
+- `choice`: `label -> description` map or label array.
+- `score`: level array (for example `["low", "medium", "high"]`).
+- `noul`: `true -> description`, `false -> description` map (optional).
 
-**Contoh: `choice`**
+**Example: `choice`**
 
 ```bash
 curl -X POST http://localhost:3000/v1/predict \
@@ -120,17 +120,17 @@ curl -X POST http://localhost:3000/v1/predict \
   -H "Content-Type: application/json" \
   -d '{
     "model": "laya-base",
-    "text": "Berapa biaya pendaftaran mahasiswa baru di Polinema?",
+    "text": "What is the new student registration fee at Polinema?",
     "questions": {
       "topic": {
         "type": "choice",
-        "instructions": "Pesan pengguna termasuk kategori topik yang mana dalam konteks informasi Politeknik Negeri Malang (Polinema)?",
+        "instructions": "Which topic category does the user message belong to in the context of Politeknik Negeri Malang (Polinema)?",
         "criteria": {
-          "profil": "Pertanyaan tentang profil atau informasi umum Polinema.",
-          "jurusan": "Pertanyaan tentang jurusan atau program studi di Polinema.",
-          "pendaftaran": "Pertanyaan tentang pendaftaran atau cara masuk kuliah di Polinema.",
-          "kontak": "Pertanyaan tentang cara menghubungi Polinema.",
-          "luar-topik": "Bukan pertanyaan tentang Polinema."
+          "profile": "Questions about the profile or general information of Polinema.",
+          "majors": "Questions about departments or study programs at Polinema.",
+          "admission": "Questions about admission or how to enroll at Polinema.",
+          "contact": "Questions about how to contact Polinema.",
+          "off-topic": "Not a question about Polinema."
         }
       }
     }
@@ -145,23 +145,23 @@ curl -X POST http://localhost:3000/v1/predict \
   "answers": {
     "topic": {
       "type": "choice",
-      "choice": "pendaftaran",
+      "choice": "admission",
       "probabilities": {
-        "profil": 0.0005,
-        "jurusan": 0.0006,
-        "pendaftaran": 0.9984,
-        "kontak": 0.0002,
-        "luar-topik": 0.0004
+        "profile": 0.0203,
+        "majors": 0.0043,
+        "admission": 0.9682,
+        "contact": 0.0008,
+        "off-topic": 0.0064
       },
-      "confidence": 0.9911,
-      "answer_confidence": 0.9984,
+      "confidence": 0.8932,
+      "answer_confidence": 0.9682,
       "action": { "act_probability": 1 }
     }
   },
   "usage": {
-    "input_tokens": 105,
+    "input_tokens": 104,
     "output_tokens": 0,
-    "state_tokens": 10,
+    "state_tokens": 11,
     "state_tokens_dropped": 0,
     "truncated": false,
     "truncated_questions": []
@@ -169,7 +169,7 @@ curl -X POST http://localhost:3000/v1/predict \
 }
 ```
 
-**Contoh: `noul` + `score` dalam satu request**
+**Example: `noul` + `score` in one request**
 
 ```bash
 curl -X POST http://localhost:3000/v1/predict \
@@ -177,17 +177,17 @@ curl -X POST http://localhost:3000/v1/predict \
   -H "Content-Type: application/json" \
   -d '{
     "model": "laya-base",
-    "text": "Saya marah sekali dengan layanan ini!",
+    "text": "I am so angry with this service!",
     "questions": {
-      "marah": {
+      "angry": {
         "type": "noul",
-        "instructions": "Apakah pengguna marah?",
-        "criteria": { "true": "ya, marah", "false": "tidak" }
+        "instructions": "Is the user angry?",
+        "criteria": { "true": "yes, angry", "false": "no" }
       },
-      "sentimen": {
+      "sentiment": {
         "type": "score",
-        "instructions": "Seberapa positif nada pesan ini?",
-        "criteria": ["sangat negatif", "netral", "sangat positif"]
+        "instructions": "How positive is the tone of this message?",
+        "criteria": ["very negative", "neutral", "very positive"]
       }
     }
   }'
@@ -199,66 +199,70 @@ curl -X POST http://localhost:3000/v1/predict \
 {
   "model": "laya-base",
   "answers": {
-    "marah": {
+    "angry": {
       "type": "noul",
-      "noul": 0.9331,
-      "confidence": 0.9331,
-      "answer_confidence": 0.9331,
+      "noul": 0.9653,
+      "confidence": 0.9653,
+      "answer_confidence": 0.9653,
       "action": { "act_probability": 1 }
     },
-    "sentimen": {
+    "sentiment": {
       "type": "score",
-      "score": 0.0342,
-      "legend": { "0": "sangat negatif", "1": "netral", "2": "sangat positif" },
-      "probabilities": { "0": 0.9678, "1": 0.0303, "2": 0.002 },
-      "confidence": 0.8636,
-      "answer_confidence": 0.9678,
+      "score": 0.0021,
+      "legend": { "0": "very negative", "1": "neutral", "2": "very positive" },
+      "probabilities": { "0": 0.9981, "1": 0.0017, "2": 0.0002 },
+      "confidence": 0.9869,
+      "answer_confidence": 0.9981,
       "action": { "act_probability": 1 }
     }
   },
-  "usage": { "input_tokens": 71, "output_tokens": 0, "state_tokens": 7 }
+  "usage": { "input_tokens": 75, "output_tokens": 0, "state_tokens": 8 }
 }
 ```
 
-**Bentuk jawaban per tipe**
+**Answer shape per type**
 
-- `choice`: `choice` (label terpilih), `probabilities`, `confidence`.
-- `noul`: `noul` (angka 0..1). Threshold (misal 0.5) ditentukan pemanggil.
-- `score`: `score` (angka), `legend` (mapping level), `probabilities`.
+- `choice`: `choice` (picked label), `probabilities`, `confidence`.
+- `noul`: `noul` (number 0..1). The threshold (for example 0.5) is up to the caller.
+- `score`: `score` (number), `legend` (level mapping), `probabilities`.
 
-Semua jawaban juga berisi `answer_confidence` dan `action.act_probability`.
-Engine TIDAK menerapkan threshold apa pun.
+Every answer also carries `answer_confidence` and `action.act_probability`.
+The engine applies NO threshold whatsoever.
 
-**Error**
+**Errors**
 
-| Status | `error` | Keterangan |
+| Status | `error` | Description |
 |---|---|---|
-| 400 | `FST_ERR_VALIDATION` | Body tidak sesuai skema (misal `type` tidak dikenal) |
-| 401 | `unauthorized` | Token salah / tidak ada |
-| 404 | `model_not_found` | `model_id` tidak terdaftar |
-| 422 | `model_not_ready` | File model belum lengkap (`missingFiles` di pesan) |
-| 422 | `invalid_questions` | Definisi pertanyaan ditolak Laya |
-| 500 | `inference_failed` | Gagal menjalankan inferensi |
+| 400 | `FST_ERR_VALIDATION` | Body does not match the schema (for example unknown `type`) |
+| 401 | `unauthorized` | Wrong or missing token |
+| 404 | `model_not_found` | `model_id` is not registered |
+| 422 | `model_not_ready` | Model files are incomplete (`missingFiles` in the message) |
+| 422 | `invalid_questions` | Question definition rejected by Laya |
+| 500 | `inference_failed` | Inference failed to run |
 
-Contoh respons:
+Example responses:
 
 ```json
-{ "error": "model_not_ready", "message": "Model \"laya-rusak\" belum siap. File hilang: rl_agent_config.json, encoder.onnx, head.onnx, tokenizer.json." }
+{ "error": "model_not_ready", "message": "Model \"laya-rusak\" is not ready. Missing files: rl_agent_config.json, encoder.onnx, head.onnx, tokenizer.json." }
+```
+
+```json
+{ "statusCode": 400, "code": "FST_ERR_VALIDATION", "error": "Bad Request", "message": "body/questions/q/type must be equal to one of the allowed values" }
 ```
 
 ---
 
 ## POST /v1/predict/batch
 
-Inferensi banyak teks dengan pertanyaan yang sama.
+Inference on many texts with the same question configuration.
 
 **Request body**
 
-| Field | Tipe | Wajib | Keterangan |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `model` | string | ya | `model_id` |
-| `texts` | string[] | ya | 1-256 teks, masing-masing 1-4000 karakter |
-| `questions` | object | ya | Sama seperti `/v1/predict` |
+| `model` | string | yes | `model_id` |
+| `texts` | string[] | yes | 1-256 texts, each 1-4000 characters |
+| `questions` | object | yes | Same as `/v1/predict` |
 
 **Response 200**
 
@@ -271,10 +275,10 @@ Inferensi banyak teks dengan pertanyaan yang sama.
       "answers": {
         "topic": {
           "type": "choice",
-          "choice": "lokasi",
-          "probabilities": { "lokasi": 0.9943, "luar-topik": 0.0057 },
-          "confidence": 0.949,
-          "answer_confidence": 0.9943,
+          "choice": "location",
+          "probabilities": { "location": 0.9917, "off-topic": 0.0083 },
+          "confidence": 0.9308,
+          "answer_confidence": 0.9917,
           "action": { "act_probability": 1 }
         }
       },
@@ -285,17 +289,17 @@ Inferensi banyak teks dengan pertanyaan yang sama.
       "answers": {
         "topic": {
           "type": "choice",
-          "choice": "luar-topik",
-          "probabilities": { "lokasi": 0.0377, "luar-topik": 0.9623 },
-          "confidence": 0.7682,
-          "answer_confidence": 0.9623,
+          "choice": "off-topic",
+          "probabilities": { "location": 0.012, "off-topic": 0.988 },
+          "confidence": 0.9061,
+          "answer_confidence": 0.988,
           "action": { "act_probability": 1 }
         }
       },
-      "usage": { "input_tokens": 42, "output_tokens": 0 }
+      "usage": { "input_tokens": 43, "output_tokens": 0 }
     }
   ]
 }
 ```
 
-Urutan `results` sama dengan urutan `texts`.
+The order of `results` matches the order of `texts`.

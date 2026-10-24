@@ -45,10 +45,10 @@ export async function modelRoutes(app: FastifyInstance) {
         },
         security: [{ bearerAuth: [] }],
         tags: ["models"],
-        summary: "Daftar model terpasang",
+        summary: "List installed models",
         description:
-          "Scan direktori model dan tampilkan semua model yang terdaftar, " +
-          "beserta status kesiapan file dan status loaded di memori.",
+          "Scan the model directory and return every registered model, " +
+          "with its file readiness and in-memory load status.",
       },
     },
     async (req, reply) => {
@@ -66,7 +66,7 @@ export async function modelRoutes(app: FastifyInstance) {
           type: "object",
           required: ["id"],
           properties: {
-            id: { type: "string", description: "ID model (nama folder)." },
+            id: { type: "string", description: "Model ID (folder name)." },
           },
         },
         response: {
@@ -76,8 +76,8 @@ export async function modelRoutes(app: FastifyInstance) {
         },
         security: [{ bearerAuth: [] }],
         tags: ["models"],
-        summary: "Detail satu model",
-        description: "Ambil manifest dan status satu model berdasarkan ID.",
+        summary: "Model details",
+        description: "Fetch the manifest and status of a single model by ID.",
       },
     },
     async (req, reply) => {
@@ -86,7 +86,7 @@ export async function modelRoutes(app: FastifyInstance) {
       if (!info) {
         return reply.status(404).send({
           error: "model_not_found",
-          message: `Model "${req.params.id}" tidak ditemukan di direktori model.`,
+          message: `Model "${req.params.id}" was not found in the model directory.`,
         });
       }
       return reply.send(info);
@@ -101,7 +101,7 @@ export async function modelRoutes(app: FastifyInstance) {
           type: "object",
           required: ["id"],
           properties: {
-            id: { type: "string", description: "ID model (nama folder)." },
+            id: { type: "string", description: "Model ID (folder name)." },
           },
         },
         response: {
@@ -116,10 +116,10 @@ export async function modelRoutes(app: FastifyInstance) {
         },
         security: [{ bearerAuth: [] }],
         tags: ["models"],
-        summary: "Keluarkan model dari memori",
+        summary: "Unload a model from memory",
         description:
-          "Hapus model dari cache. Model akan dimuat ulang otomatis saat dipakai berikutnya. " +
-          "Gunakan setelah file model diganti di disk.",
+          "Remove the model from the cache. It is loaded again automatically on the next use. " +
+          "Use this after replacing the model files on disk.",
       },
     },
     async (req, reply) => {

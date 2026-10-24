@@ -2,8 +2,8 @@ import { Agent, type QuestionDef, type SystemAnswer, type SystemUsage } from "la
 import { modelDirOf } from "./registry.ts";
 
 /**
- * Cache agent per model id (lazy load).
- * Model dimuat saat pertama dipakai, lalu tetap di memori.
+ * Per-model agent cache (lazy load).
+ * A model is loaded on first use, then kept in memory.
  */
 const agents = new Map<string, Agent>();
 const loading = new Map<string, Promise<Agent>>();
@@ -29,7 +29,7 @@ export async function getAgent(id: string): Promise<Agent> {
   return promise;
 }
 
-/** Keluarkan model dari cache (misal setelah file model diganti). */
+/** Drop a model from the cache (for example after its files are replaced on disk). */
 export function unloadModel(id: string): boolean {
   loading.delete(id);
   return agents.delete(id);
@@ -42,9 +42,9 @@ export interface PredictResult {
 }
 
 /**
- * Inferensi satu teks dengan konfigurasi pertanyaan apa pun.
- * Nilai mentah yang dikembalikan: choice -> label + probabilities,
- * noul -> angka 0..1, score -> angka. Threshold menjadi urusan pemanggil.
+ * Run inference on a single text with arbitrary question configuration.
+ * Raw values are returned: choice -> label + probabilities,
+ * noul -> number 0..1, score -> number. Thresholds belong to the caller.
  */
 export async function predict(
   id: string,

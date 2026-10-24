@@ -1,7 +1,7 @@
 {
   "name": "runlaya",
   "version": "0.1.0",
-  "description": "Inference API plug-and-play untuk model Laya ONNX: daftarkan banyak model, jalankan prediksi choice/score/noul dengan criteria per-request.",
+  "description": "Plug-and-play inference API for Laya ONNX models: register multiple models, run choice/score/noul predictions with per-request parameters, no code changes.",
   "type": "module",
   "private": true,
   "license": "Apache-2.0",

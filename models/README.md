@@ -1,46 +1,46 @@
-# models/ - Direktori model Laya
+# models/ - Laya model directory
 
-Setiap subfolder di direktori ini = satu model terdaftar.
-Nama folder menjadi `model_id` yang dikirim saat request.
+Each subfolder in this directory is one registered model.
+The folder name becomes the `model_id` sent in requests.
 
-## Struktur folder model
+## Model folder structure
 
 ```
 models/
   <model-id>/
-    manifest.json        <- metadata (opsional, untuk dokumentasi)
-    rl_agent_config.json <- wajib
-    tokenizer.json       <- wajib (atau tokenizer/tokenizer.json)
-    encoder.onnx         <- wajib
-    encoder.onnx.data    <- jika ada (bobot terpisah)
-    head.onnx            <- wajib
-    head.onnx.data       <- jika ada (bobot terpisah)
+    manifest.json        <- metadata (optional, for documentation)
+    rl_agent_config.json <- required
+    tokenizer.json       <- required (or tokenizer/tokenizer.json)
+    encoder.onnx         <- required
+    encoder.onnx.data    <- when present (separate weights)
+    head.onnx            <- required
+    head.onnx.data       <- when present (separate weights)
 ```
 
-## manifest.json (opsional)
+## manifest.json (optional)
 
 ```json
 {
   "id": "laya-base",
   "name": "Laya Base",
-  "description": "Model dasar Laya tanpa fine-tuning.",
+  "description": "Base Laya model without fine-tuning.",
   "created": "2026-10-24",
-  "notes": "Baseline untuk eksperimen A-B-C-D."
+  "notes": "Baseline for the A-B-C-D experiments."
 }
 ```
 
-Tanpa manifest, model tetap terdaftar dengan `name` = nama folder.
+Without a manifest the model is still registered with `name` = folder name.
 
-## Cara memasang model
+## How to install a model
 
-1. Buat folder baru, misal `models/laya-finetuned-a/`.
-2. Copy file model ONNX ke dalamnya.
-3. (Opsional) tulis `manifest.json`.
-4. Model langsung terlihat di `GET /v1/models` tanpa restart.
+1. Create a new folder, for example `models/laya-finetuned-a/`.
+2. Copy the ONNX model files into it.
+3. (Optional) write a `manifest.json`.
+4. The model shows up in `GET /v1/models` immediately, no restart needed.
 
-## Catatan
+## Notes
 
-- Isi folder ini TIDAK di-commit ke git (terlalu besar).
-- `GET /v1/models` selalu scan ulang direktori, jadi model baru langsung terdeteksi.
-- Setelah mengganti file model yang sudah pernah dipakai,
-  panggil `POST /v1/models/<id>/unload` agar model dimuat ulang dari disk.
+- The contents of this directory are NOT committed to git (too large).
+- `GET /v1/models` always rescans the directory, so new models are detected instantly.
+- After replacing the files of a model that was already used,
+  call `POST /v1/models/<id>/unload` so the model is reloaded from disk.

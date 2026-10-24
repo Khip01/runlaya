@@ -1,86 +1,86 @@
 # runlaya
 
-Inference API plug-and-play untuk model Laya ONNX.
-Daftarkan model Anda (fine-tuned atau belum) ke direktori `models/`, lalu
-jalankan prediksi `choice` / `score` / `noul` dengan parameter per-request.
-Tanpa ubah kode.
+Plug-and-play inference API for Laya ONNX models.
+Register your models (fine-tuned or not) in the `models/` directory, then run
+`choice` / `score` / `noul` predictions with per-request parameters.
+No code changes needed.
 
-## Fitur
+## Features
 
-- Plug and play: copy folder model ONNX, langsung terdaftar tanpa restart.
-- Multi-model: banyak model sekaligus, pilih via field `model` di request.
-- Parameter per-request: tipe pertanyaan, instruksi, dan `criteria` dikirim
-  di body request, sehingga cocok untuk eksperimen (criteria lengkap vs minimal).
-- Output mentah tanpa threshold: `choice` (label + probabilities + confidence),
-  `noul` (angka 0..1), `score` (angka). Keputusan threshold ada di pemanggil.
-- Batch: prediksi banyak teks sekaligus untuk evaluasi dataset.
-- Dokumentasi API interaktif di `/docs` (Scalar).
+- Plug and play: copy an ONNX model folder in, it is registered instantly without restart.
+- Multi-model: run many models side by side, pick one via the `model` field per request.
+- Per-request parameters: question type, instructions, and `criteria` are sent
+  in the request body, perfect for experiments (full vs minimal criteria).
+- Raw output without thresholds: `choice` (label + probabilities + confidence),
+  `noul` (number 0..1), `score` (number). Threshold decisions belong to the caller.
+- Batch: predict many texts at once for dataset evaluation.
+- Interactive API documentation at `/docs` (Scalar).
 
-## Instalasi
+## Installation
 
-Prasyarat: Node.js >= 20, git.
+Requirements: Node.js >= 20, git.
 
 ```bash
 git clone --recurse-submodules https://github.com/Khip01/runlaya.git
 cd runlaya
 npm install --ignore-scripts
-npm run setup:laya    # build laya-ts dari submodule vendor/
+npm run setup:laya    # build laya-ts from the vendor/ submodule
 ```
 
-Jika lupa `--recurse-submodules`:
+If you forgot `--recurse-submodules`:
 
 ```bash
 git submodule update --init
 npm run setup:laya
 ```
 
-## Konfigurasi
+## Configuration
 
 ```bash
 cp .env.example .env
 ```
 
-| Variabel | Wajib | Default | Keterangan |
+| Variable | Required | Default | Description |
 |---|---|---|---|
-| `API_TOKEN` | ya | - | Token Bearer untuk autentikasi API |
-| `PORT` | tidak | 3000 | Port server |
-| `MODELS_DIR` | tidak | `./models/` | Direktisi berisi subfolder model |
+| `API_TOKEN` | yes | - | Bearer token for API authentication |
+| `PORT` | no | 3000 | Server port |
+| `MODELS_DIR` | no | `./models/` | Directory containing model subfolders |
 
-## Menjalankan
+## Running
 
 ```bash
 npm start
 ```
 
-Server berjalan di `http://localhost:3000`, dokumentasi di `http://localhost:3000/docs`.
+The server runs at `http://localhost:3000`, documentation at `http://localhost:3000/docs`.
 
-## Memasang model
+## Installing models
 
-Satu folder = satu model. Nama folder menjadi `model_id`.
+One folder = one model. The folder name becomes the `model_id`.
 
 ```
 models/
   laya-base/
-    manifest.json        (opsional)
+    manifest.json        (optional)
     rl_agent_config.json
     tokenizer.json
-    encoder.onnx (+ .onnx.data jika ada)
-    head.onnx (+ .onnx.data jika ada)
+    encoder.onnx (+ .onnx.data when weights are separate)
+    head.onnx (+ .onnx.data when weights are separate)
   laya-finetuned-a/
     ...
 ```
 
-Detail lengkap di [models/README.md](models/README.md).
+See [models/README.md](models/README.md) for full details.
 
-## Contoh pemakaian
+## Usage examples
 
-Daftar model:
+List models:
 
 ```bash
 curl -H "Authorization: Bearer $API_TOKEN" http://localhost:3000/v1/models
 ```
 
-Prediksi (semua parameter dikirim per-request):
+Predict (all parameters sent per request):
 
 ```bash
 curl -X POST http://localhost:3000/v1/predict \
@@ -88,21 +88,21 @@ curl -X POST http://localhost:3000/v1/predict \
   -H "Content-Type: application/json" \
   -d '{
     "model": "laya-base",
-    "text": "Berapa biaya pendaftaran di Polinema?",
+    "text": "What is the registration fee at Polinema?",
     "questions": {
       "topik": {
         "type": "choice",
-        "instructions": "Pesan pengguna termasuk kategori yang mana?",
+        "instructions": "Which category does the user message belong to?",
         "criteria": {
-          "pendaftaran": "Pertanyaan tentang pendaftaran kuliah.",
-          "luar-topik": "Bukan tentang Polinema."
+          "pendaftaran": "Questions about university admission.",
+          "luar-topik": "Not about Polinema."
         }
       }
     }
   }'
 ```
 
-Respons:
+Response:
 
 ```json
 {
@@ -121,28 +121,28 @@ Respons:
 }
 ```
 
-Contoh lain (tipe `noul` dan `score`, batch, error handling) ada di [API.md](API.md).
+More examples (`noul` and `score` types, batch, error handling) are in [API.md](API.md).
 
-## Endpoint
+## Endpoints
 
-| Method | Path | Fungsi |
+| Method | Path | Function |
 |---|---|---|
-| GET | `/v1/models` | Daftar model terpasang |
-| GET | `/v1/models/:id` | Detail satu model |
-| POST | `/v1/models/:id/unload` | Keluarkan model dari memori |
-| POST | `/v1/predict` | Prediksi satu teks |
-| POST | `/v1/predict/batch` | Prediksi banyak teks |
+| GET | `/v1/models` | List installed models |
+| GET | `/v1/models/:id` | Model details |
+| POST | `/v1/models/:id/unload` | Unload a model from memory |
+| POST | `/v1/predict` | Predict a single text |
+| POST | `/v1/predict/batch` | Predict many texts |
 
-Detail di [API.md](API.md).
+Details in [API.md](API.md).
 
-## Pengembangan
+## Development
 
 ```bash
 npm run typecheck
 ```
 
-Panduan untuk AI agent ada di [AGENTS.md](AGENTS.md).
+The agent guide is in [AGENTS.md](AGENTS.md).
 
-## Lisensi
+## License
 
 Apache-2.0

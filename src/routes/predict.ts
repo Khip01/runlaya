@@ -15,10 +15,10 @@ const ERROR_SCHEMA = {
 } as const;
 
 /**
- * Skema pertanyaan Laya generik:
+ * Generic Laya question schema:
  *   { type: "choice" | "score" | "noul", instructions: string, criteria: ... }
- * `criteria` bebas (map label -> deskripsi, array label, atau map true/false)
- * karena bentuknya bergantung pada tipe pertanyaan.
+ * `criteria` is free-form (label -> description map, label array, or
+ * true/false map) because its shape depends on the question type.
  */
 const QUESTIONS_SCHEMA = {
   type: "object",
@@ -32,17 +32,17 @@ const QUESTIONS_SCHEMA = {
         type: "string",
         enum: ["choice", "score", "noul"],
         description:
-          "Tipe pertanyaan: choice (pilih satu label), " +
-          "score (nilai 0..n), noul (probabilitas 0..1).",
+          "Question type: choice (pick one label), " +
+          "score (value 0..n), noul (probability 0..1).",
       },
       instructions: {
         type: "string",
-        description: "Instruksi/pertanyaan untuk model.",
+        description: "Instruction/question for the model.",
       },
       criteria: {
         description:
-          "Kriteria pilihan. choice: map label -> deskripsi atau array label. " +
-          "score: array level (opsional). noul: map true/false -> deskripsi (opsional).",
+          "Choice criteria. choice: label -> description map or label array. " +
+          "score: level array (optional). noul: true/false -> description map (optional).",
       },
     },
   },
@@ -52,14 +52,14 @@ const ANSWERS_SCHEMA = {
   type: "object",
   additionalProperties: true,
   description:
-    "Jawaban mentah per pertanyaan. choice -> choice + probabilities + confidence. " +
-    "noul -> angka 0..1. score -> angka. Tanpa threshold: keputusan ada di pemanggil.",
+    "Raw answer per question. choice -> choice + probabilities + confidence. " +
+    "noul -> number 0..1. score -> number. No threshold applied: the decision belongs to the caller.",
 } as const;
 
 const USAGE_SCHEMA = {
   type: "object",
   additionalProperties: true,
-  description: "Pemakaian token dan info truncation dari Laya.",
+  description: "Token usage and truncation info from Laya.",
 } as const;
 
 function validateQuestions(questions: Record<string, unknown>): string | null {
@@ -67,7 +67,7 @@ function validateQuestions(questions: Record<string, unknown>): string | null {
     try {
       checkQuestion(qid, qdef);
     } catch (err) {
-      return err instanceof Error ? err.message : `Pertanyaan "${qid}" tidak valid.`;
+      return err instanceof Error ? err.message : `Question "${qid}" is invalid.`;
     }
   }
   return null;
@@ -78,14 +78,14 @@ async function ensureModelReady(modelId: string, reply: FastifyReply): Promise<b
   if (!info) {
     await reply.status(404).send({
       error: "model_not_found",
-      message: `Model "${modelId}" tidak ditemukan di direktori model.`,
+      message: `Model "${modelId}" was not found in the model directory.`,
     });
     return false;
   }
   if (!info.ready) {
     await reply.status(422).send({
       error: "model_not_ready",
-      message: `Model "${modelId}" belum siap. File hilang: ${info.missingFiles.join(", ")}.`,
+      message: `Model "${modelId}" is not ready. Missing files: ${info.missingFiles.join(", ")}.`,
     });
     return false;
   }
@@ -104,13 +104,13 @@ export async function predictRoutes(app: FastifyInstance) {
             model: {
               type: "string",
               minLength: 1,
-              description: "ID model yang dipakai (nama folder di direktori model).",
+              description: "Model ID to use (folder name in the model directory).",
             },
             text: {
               type: "string",
               minLength: 1,
               maxLength: 4000,
-              description: "Teks masukan untuk diprediksi.",
+              description: "Input text to predict on.",
             },
             questions: QUESTIONS_SCHEMA,
           },
@@ -131,11 +131,11 @@ export async function predictRoutes(app: FastifyInstance) {
         },
         security: [{ bearerAuth: [] }],
         tags: ["predict"],
-        summary: "Prediksi satu teks",
+        summary: "Predict a single text",
         description:
-          "Jalankan inferensi Laya pada satu teks dengan konfigurasi pertanyaan apa pun. " +
-          "Semua parameter (tipe, instruksi, criteria) dikirim per-request, " +
-          "sehingga tidak perlu ubah kode untuk eksperimen berbeda.",
+          "Run Laya inference on a single text with arbitrary question configuration. " +
+          "All parameters (type, instructions, criteria) are sent per request, " +
+          "so different experiments never need code changes.",
       },
     },
     async (req, reply) => {
@@ -160,7 +160,7 @@ export async function predictRoutes(app: FastifyInstance) {
         req.log.error(err);
         return reply.status(500).send({
           error: "inference_failed",
-          message: err instanceof Error ? err.message : "Inferensi gagal.",
+          message: err instanceof Error ? err.message : "Inference failed.",
         });
       }
     },
@@ -177,14 +177,14 @@ export async function predictRoutes(app: FastifyInstance) {
             model: {
               type: "string",
               minLength: 1,
-              description: "ID model yang dipakai (nama folder di direktori model).",
+              description: "Model ID to use (folder name in the model directory).",
             },
             texts: {
               type: "array",
               minItems: 1,
               maxItems: 256,
               items: { type: "string", minLength: 1, maxLength: 4000 },
-              description: "Daftar teks masukan.",
+              description: "Input texts.",
             },
             questions: QUESTIONS_SCHEMA,
           },
@@ -214,10 +214,10 @@ export async function predictRoutes(app: FastifyInstance) {
         },
         security: [{ bearerAuth: [] }],
         tags: ["predict"],
-        summary: "Prediksi batch (banyak teks)",
+        summary: "Batch predict (multiple texts)",
         description:
-          "Jalankan inferensi untuk banyak teks sekaligus dengan pertanyaan yang sama. " +
-          "Berguna untuk evaluasi dataset.",
+          "Run inference for many texts at once with the same question configuration. " +
+          "Useful for dataset evaluation.",
       },
     },
     async (req, reply) => {
@@ -242,7 +242,7 @@ export async function predictRoutes(app: FastifyInstance) {
         req.log.error(err);
         return reply.status(500).send({
           error: "inference_failed",
-          message: err instanceof Error ? err.message : "Inferensi gagal.",
+          message: err instanceof Error ? err.message : "Inference failed.",
         });
       }
     },
