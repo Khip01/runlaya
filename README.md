@@ -151,6 +151,8 @@ Response:
 ```
 
 More examples (`noul` and `score` types, batch, error handling) are in [API.md](API.md).
+For more request examples across all question types (3 per type), see
+[EXAMPLES.md](EXAMPLES.md).
 
 ## Endpoints
 
@@ -162,7 +164,7 @@ More examples (`noul` and `score` types, batch, error handling) are in [API.md](
 | POST | `/v1/predict` | Predict a single text |
 | POST | `/v1/predict/batch` | Predict many texts |
 
-Details in [API.md](API.md).
+Details in [API.md](API.md). More request examples in [EXAMPLES.md](EXAMPLES.md).
 
 ## Development
 

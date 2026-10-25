@@ -56,6 +56,7 @@ runlaya/
   run.cmd            <- cmd wrapper (Windows)
   vendor/laya/       <- submodule (do not edit directly)
   API.md             <- API reference with real captured responses
+  EXAMPLES.md        <- request examples per question type, real outputs
   README.md          <- usage guide
   LICENSE            <- Apache License 2.0
 ```
