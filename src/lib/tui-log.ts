@@ -266,17 +266,25 @@ function describeAnswer(qid: string, raw: unknown): string[] {
 
   const probs = a["probabilities"];
   if (typeof probs === "object" && probs !== null) {
-    const shown = Object.entries(probs as Record<string, number>)
-      .map(([k, v]) => `${k} ${v.toFixed(4)}`)
-      .join(", ");
-    lines.push(`    probs: ${style.dim(oneLine(shown, 48))}`);
+    const entries = Object.entries(probs as Record<string, number>);
+    if (entries.length > 0) {
+      const width = Math.max(...entries.map(([k]) => k.length));
+      lines.push(`    ${style.dim("probs:")}`);
+      for (const [k, v] of entries) {
+        lines.push(`      ${style.dim(`${k.padEnd(width)}  ${v.toFixed(4)}`)}`);
+      }
+    }
   }
   const legend = a["legend"];
   if (typeof legend === "object" && legend !== null) {
-    const shown = Object.entries(legend as Record<string, string>)
-      .map(([k, v]) => `${k}=${v}`)
-      .join(", ");
-    lines.push(`    legend: ${style.dim(oneLine(shown, 46))}`);
+    const entries = Object.entries(legend as Record<string, string>);
+    if (entries.length > 0) {
+      const width = Math.max(...entries.map(([k]) => k.length));
+      lines.push(`    ${style.dim("legend:")}`);
+      for (const [k, v] of entries) {
+        lines.push(`      ${style.dim(`${k.padEnd(width)} = ${v}`)}`);
+      }
+    }
   }
   return lines;
 }
