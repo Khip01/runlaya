@@ -77,6 +77,54 @@ export function oneLine(text: string, max = 60): string {
   return flat.length <= max ? flat : `${flat.slice(0, max - 1)}…`;
 }
 
+/** Wrap text to the given width. Long words are hard-split, never truncated. */
+function wrapText(text: string, width: number): string[] {
+  const flat = text.replace(/\s+/g, " ").trim();
+  if (flat === "") return [];
+
+  const lines: string[] = [];
+  let current = "";
+  for (const word of flat.split(" ")) {
+    let w = word;
+    while (w.length > width) {
+      if (current !== "") {
+        lines.push(current);
+        current = "";
+      }
+      lines.push(w.slice(0, width));
+      w = w.slice(width);
+    }
+    if (current === "") {
+      current = w;
+    } else if (current.length + 1 + w.length <= width) {
+      current += ` ${w}`;
+    } else {
+      lines.push(current);
+      current = w;
+    }
+  }
+  if (current !== "") lines.push(current);
+  return lines;
+}
+
+/**
+ * Render a value as readable lines: short values stay on the `key:` line,
+ * long values wrap below it instead of being cut off.
+ */
+function valueLines(keyPrefix: string, text: string, indent: number, maxInline = 60): string[] {
+  const pad = " ".repeat(indent);
+  const flat = text.replace(/\s+/g, " ").trim();
+  const fitsInline =
+    flat.length <= maxInline && visibleLen(pad + keyPrefix) + flat.length <= BOX_WIDTH - 2;
+  if (fitsInline) return [`${pad}${keyPrefix}${flat}`];
+
+  const width = Math.max(24, BOX_WIDTH - 4 - (indent + 2));
+  const lines: string[] = [];
+  if (keyPrefix.trim() !== "") lines.push(`${pad}${keyPrefix.trimEnd()}`);
+  for (const line of wrapText(flat, width)) lines.push(`${pad}  ${line}`);
+  return lines;
+}
+
 function isPrimitive(value: unknown): value is string | number | boolean | null {
   return (
     value === null || ["string", "number", "boolean"].includes(typeof value)
@@ -92,8 +140,8 @@ export function describeBody(body: unknown, indent = 0, keyPrefix = ""): string[
 
   if (body === undefined) return [];
   if (isPrimitive(body)) {
-    const shown = typeof body === "string" ? oneLine(body, 70) : String(body);
-    return [`${pad}${keyPrefix}${shown}`];
+    if (typeof body === "string") return valueLines(keyPrefix, body, indent);
+    return [`${pad}${keyPrefix}${String(body)}`];
   }
   if (Array.isArray(body)) {
     const lines = [`${pad}${keyPrefix}${style.dim(`[${body.length} items]`)}`];
@@ -121,8 +169,9 @@ export function statusColor(status: number): StyleName {
   return "green";
 }
 
-/** Print an incoming HTTP request box. */
+/** Print an incoming HTTP request box. Starts a new cycle after a divider. */
 export function logRequest(method: string, path: string, body: unknown): void {
+  console.log(`\n${style.dim("=".repeat(BOX_WIDTH))}`);
   const lines = [
     `${style.bold(`${method} ${path}`)}`,
     ...describeBody(body, 0),
@@ -189,8 +238,12 @@ function describeQuestions(questions: Record<string, unknown>): string[] {
     const criteria = q["criteria"] !== undefined ? describeCriteria(q["criteria"]) : "";
 
     lines.push(`  ${style.cyan(qid)} ${style.yellow(`[${type}]`)}`);
-    if (instructions) lines.push(`    ${style.dim(`"${oneLine(instructions, 52)}"`)}`);
-    if (criteria) lines.push(`    criteria: ${style.dim(oneLine(criteria, 48))}`);
+    if (instructions) {
+      lines.push(...valueLines("", `"${instructions}"`, 4, 52).map((l) => style.dim(l)));
+    }
+    if (criteria) {
+      lines.push(...valueLines("criteria: ", criteria, 4, 48).map((l) => style.dim(l)));
+    }
   }
   return lines;
 }
@@ -242,7 +295,7 @@ export function logModelCall(
   if (answers === undefined) {
     const lines = [
       `${style.bold("model: ")}${model}`,
-      `${style.bold("text: ")}${style.dim(`"${oneLine(text, 58)}"`)}`,
+      ...valueLines(`${style.bold("text: ")}`, `"${text}"`, 0),
       ...describeQuestions(questions),
     ];
     console.log(renderBox("blue", "MODEL REQUEST", lines));
