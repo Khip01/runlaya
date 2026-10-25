@@ -1,5 +1,6 @@
 import { Agent, type QuestionDef, type SystemAnswer, type SystemUsage } from "laya-ts";
 import { modelDirOf } from "./registry.ts";
+import { logModelCall, logModelBatchCall } from "./tui-log.ts";
 
 /**
  * Per-model agent cache (lazy load).
@@ -52,10 +53,14 @@ export async function predict(
   questions: Record<string, QuestionDef>,
 ): Promise<PredictResult> {
   const agent = await getAgent(id);
+  logModelCall(id, text, questions);
+  const t0 = Date.now();
   const result = await agent.predict(text, questions);
+  const answers = result.answers as Record<string, SystemAnswer>;
+  logModelCall(id, text, questions, answers, Date.now() - t0);
   return {
     model: id,
-    answers: result.answers as Record<string, SystemAnswer>,
+    answers,
     usage: result.usage,
   };
 }
@@ -66,10 +71,14 @@ export async function predictBatch(
   questions: Record<string, QuestionDef>,
 ): Promise<PredictResult[]> {
   const agent = await getAgent(id);
+  logModelBatchCall(id, texts.length, questions);
+  const t0 = Date.now();
   const results = await agent.predictBatch(texts, questions);
-  return results.map((r) => ({
+  const mapped = results.map((r) => ({
     model: id,
     answers: r.answers as Record<string, SystemAnswer>,
     usage: r.usage,
   }));
+  logModelBatchCall(id, texts.length, questions, mapped, Date.now() - t0);
+  return mapped;
 }

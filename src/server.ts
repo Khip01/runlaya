@@ -4,14 +4,51 @@ import swagger from "@fastify/swagger";
 import scalarApiReference from "@scalar/fastify-api-reference";
 import { modelRoutes } from "./routes/models.ts";
 import { predictRoutes } from "./routes/predict.ts";
+import { logRequest, logResponse, logError } from "./lib/tui-log.ts";
 
 const PORT = parseInt(process.env["PORT"] ?? "3000", 10);
 
+declare module "fastify" {
+  interface FastifyRequest {
+    startTime: number;
+  }
+}
+
 async function main() {
   const app = Fastify({
-    logger: {
-      level: "info",
-    },
+    logger: false,
+  });
+
+  app.decorateRequest("startTime", 0);
+
+  app.addHook("onRequest", async (req) => {
+    req.startTime = Date.now();
+  });
+
+  app.addHook("preHandler", async (req) => {
+    // Docs and spec requests are noisy, skip them.
+    if (req.url.startsWith("/docs") || req.url.startsWith("/openapi.json")) return;
+    logRequest(req.method, req.url, req.body ?? {});
+  });
+
+  app.addHook("onSend", async (req, reply, payload) => {
+    if (req.url.startsWith("/docs") || req.url.startsWith("/openapi.json")) return payload;
+    const started = req.startTime;
+    const durationMs = started ? Date.now() - started : 0;
+    let body: unknown = payload;
+    try {
+      body = typeof payload === "string" ? JSON.parse(payload) : payload;
+    } catch {
+      // keep raw payload when it is not JSON
+    }
+    logResponse(req.method, req.url, reply.statusCode, durationMs, body);
+    return payload;
+  });
+
+  app.addHook("onResponse", async (req, reply) => {
+    if (reply.statusCode >= 400) {
+      logError(`${req.method} ${req.url}`, `status ${reply.statusCode}`);
+    }
   });
 
   await app.register(swagger, {
